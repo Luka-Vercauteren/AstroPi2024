@@ -3,14 +3,19 @@ from datetime import datetime
 import cv2
 import math
 
+flightheight = 419.45
+focallength = 7.5
+sensorwidth = 616
+sensorheigth = 462
+imagewidth = 3040
+imageheigth = 4056
 
 def get_time(image):
     with open(image, 'rb') as image_file:
         img = Image(image_file)
         time_str = img.get("datetime_original")
         time = datetime.strptime(time_str, '%Y:%m:%d %H:%M:%S')
-    return time
-    
+    return time   
     
 def get_time_difference(image_1, image_2):
     time_1 = get_time(image_1)
@@ -18,19 +23,16 @@ def get_time_difference(image_1, image_2):
     time_difference = time_2 - time_1
     return time_difference.seconds
 
-
 def convert_to_cv(image_1, image_2):
     image_1_cv = cv2.imread(image_1, 0)
     image_2_cv = cv2.imread(image_2, 0)
     return image_1_cv, image_2_cv
-
 
 def calculate_features(image_1, image_2, feature_number):
     orb = cv2.ORB_create(nfeatures = feature_number)
     keypoints_1, descriptors_1 = orb.detectAndCompute(image_1_cv, None)
     keypoints_2, descriptors_2 = orb.detectAndCompute(image_2_cv, None)
     return keypoints_1, keypoints_2, descriptors_1, descriptors_2
-
 
 def calculate_matches(descriptors_1, descriptors_2):
     brute_force = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
@@ -71,8 +73,20 @@ def calculate_mean_distance(coordinates_1, coordinates_2):
         all_distances = all_distances + distance
     return all_distances / len(merged_coordinates)
 
+def calculate_GSD(flightheight, focallength, sensorwidth, sensorheigth, imagewidth, imageheigth):
+    #zie GSD propeller
+    #zie https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/
+    gsdh = (flightheight * sensorheigth * 1000)/(focallength * imageheigth * 0.264583333)
+    gsdw = (flightheight * sensorwidth * 1000)/(focallength * imagewidth  * 0.264583333)
+    print(f"{gsdh} : {gsdw}")
+    if gsdh >= gsdw:
+        GSD = gsdh
+    if gsdh < gsdw:
+        GSD = gsdw
+    return GSD
+
 def calculate_speed_in_kmps(feature_distance, GSD, time_difference):
-    distance = feature_distance * GSD / 100000
+    distance = feature_distance * GSD / 100
     speed = distance / time_difference
     return speed
 
@@ -83,5 +97,6 @@ matches = calculate_matches(descriptors_1, descriptors_2)
 #display_matches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches)
 coordinates_1, coordinates_2 = find_matching_coordinates(keypoints_1, keypoints_2, matches)
 average_feature_distance = calculate_mean_distance(coordinates_1, coordinates_2)
-speed = calculate_speed_in_kmps(average_feature_distance, 12648, time_difference)
+GSD = calculate_GSD(flightheight, focallength, sensorwidth, sensorheigth, imagewidth, imageheigth)
+speed = calculate_speed_in_kmps(average_feature_distance, GSD, time_difference)
 print(speed)

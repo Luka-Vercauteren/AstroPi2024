@@ -3,6 +3,8 @@ from datetime import datetime
 import cv2
 import math
 
+image_1 = 'photo_0683.jpg'
+image_2 = 'photo_0684.jpg'
 
 def get_time(image):
     with open(image, 'rb') as image_file:
@@ -11,19 +13,16 @@ def get_time(image):
         time = datetime.strptime(time_str, '%Y:%m:%d %H:%M:%S')
     return time
     
-    
 def get_time_difference(image_1, image_2):
     time_1 = get_time(image_1)
     time_2 = get_time(image_2)
     time_difference = time_2 - time_1
     return time_difference.seconds
 
-
 def convert_to_cv(image_1, image_2):
     image_1_cv = cv2.imread(image_1, 0)
     image_2_cv = cv2.imread(image_2, 0)
     return image_1_cv, image_2_cv
-
 
 def calculate_features(image_1, image_2, feature_number):
     orb = cv2.ORB_create(nfeatures = feature_number)
@@ -31,15 +30,11 @@ def calculate_features(image_1, image_2, feature_number):
     keypoints_2, descriptors_2 = orb.detectAndCompute(image_2_cv, None)
     return keypoints_1, keypoints_2, descriptors_1, descriptors_2
 
-
 def calculate_matches(descriptors_1, descriptors_2):
     brute_force = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = brute_force.match(descriptors_1, descriptors_2)
     matches = sorted(matches, key=lambda x: x.distance)
     return matches
-
-image_1 = 'photo_0683.jpg'
-image_2 = 'photo_0684.jpg'
 
 def display_matches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches):
     match_img = cv2.drawMatches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches[:100], None)
@@ -48,7 +43,7 @@ def display_matches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches):
     cv2.waitKey(0)
     cv2.destroyWindow('matches')
     display_matches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches)
-    
+
 def find_matching_coordinates(keypoints_1, keypoints_2, matches):
     coordinates_1 = []
     coordinates_2 = []
@@ -76,12 +71,29 @@ def calculate_speed_in_kmps(feature_distance, GSD, time_difference):
     speed = distance / time_difference
     return speed
 
+
+
 time_difference = get_time_difference(image_1, image_2)
+
 image_1_cv, image_2_cv = convert_to_cv(image_1, image_2)
+
 keypoints_1, keypoints_2, descriptors_1, descriptors_2 = calculate_features(image_1_cv, image_2_cv, 1000)
+
 matches = calculate_matches(descriptors_1, descriptors_2)
 #display_matches(image_1_cv, keypoints_1, image_2_cv, keypoints_2, matches)
 coordinates_1, coordinates_2 = find_matching_coordinates(keypoints_1, keypoints_2, matches)
+
 average_feature_distance = calculate_mean_distance(coordinates_1, coordinates_2)
 speed = calculate_speed_in_kmps(average_feature_distance, 12648, time_difference)
-print(speed)
+
+# Format the estimate_kmps to have a precision of 5 significant figures
+formatted_speed = "{:.4f}".format(speed)
+
+# Create a string to write to the file
+output_string = formatted_speed
+
+# Write to the file
+file_path = "result.txt"  # Replace with your desired file path
+with open(file_path, 'w') as file:
+    file.write(output_string)
+#print(speed)

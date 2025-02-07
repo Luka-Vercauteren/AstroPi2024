@@ -3,12 +3,12 @@ from datetime import datetime
 import cv2
 import math
 
-flightheight = 419.45
-focallength = 7.5
-sensorwidth = 616
-sensorheigth = 462
-imagewidth = 3040
-imageheigth = 4056
+flightheight = 416920
+focallength = 6	
+sensorwidth = 7.857		
+sensorheigth = 5.284
+imagewidth = 1.073
+imageheigth = 0.805
 
 def get_time(image):
     with open(image, 'rb') as image_file:
@@ -74,10 +74,8 @@ def calculate_mean_distance(coordinates_1, coordinates_2):
     return all_distances / len(merged_coordinates)
 
 def calculate_GSD(flightheight, focallength, sensorwidth, sensorheigth, imagewidth, imageheigth):
-    #zie GSD propeller
-    #zie https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/
-    gsdh = (flightheight * sensorheigth * 1000)/(focallength * imageheigth * 0.264583333)
-    gsdw = (flightheight * sensorwidth * 1000)/(focallength * imagewidth  * 0.264583333)
+    gsdh = (flightheight * sensorheigth)/(focallength * imageheigth)
+    gsdw = (flightheight * sensorwidth)/(focallength * imagewidth)
     print(f"{gsdh} : {gsdw}")
     if gsdh >= gsdw:
         GSD = gsdh
